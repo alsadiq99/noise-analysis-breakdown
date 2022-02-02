@@ -1,6 +1,10 @@
 # Noise Analysis Breakdown
 
-In this documentation, a step-by-step description of the code used in the noise anlaysis of the HIV Gene Expression assay cited below. 
+In this documentation, a step-by-step description of the code used in the noise anlaysis of the HIV Gene Expression assay.
+
+Lu, Y., Bohn-Wippert, K., Pazerunas, P. J., Moy, J. M., Singh, H., & Dar, R. D. (2021). Screening for gene expression fluctuations reveals latency-promoting agents of HIV. Proceedings of the National Academy of Sciences of the United States of America, 118(11), e2012191118. https://doi.org/10.1073/pnas.2012191118
+
+
 
 ***
 ### 1) Read .mat files from xlsx2mat.m and Plot Trajectories for Each Well
@@ -366,7 +370,256 @@ end
   </details>
 
 <details>
-  <summary>5.</summary>
+  <summary>5. Perform noise analysis! </summary>
+	
+```python
+j = 1;
+while (1)
+	% Load data
+	if (useMerged)
+		% Check if all tags are finished
+		if (j > nTag)
+			break;
+		end
+		
+		% Write filename
+		filename = sprintf('%s.mat', char(uniqTag(j)));
+		
+		% Write well name
+		wellName = char(uniqTag(j));
+		
+		% Load data
+		load(filename);
+		fprintf('Reached tag #%d/%d. Processing... ', j, nTag);
+	else
+		% Check if all wells are finished
+		if (j > nWellProc)
+			break;
+		end
+		
+		% Write filename
+		filename = sprintf('Well%s%s.mat', char(rowList(j)), char(colList(j)));
+		
+		% Write well name
+		wellName = sprintf('Well%s%s', char(rowList(j)), char(colList(j)));
+		
+		% Load data
+		load(filename);
+		fprintf('Reached well #%d/%d. Processing... ', j, nWellProc);
+	end
+	j = j + 1;
+	
+	if (cellNum == 0)
+		fprintf('No cells detected!\n');
+		continue;
+	end
+		
+		% Noise processing
+		for i = 1:nCluster
+			if (useQC)
+				tempTraj = intTrajQC(intClustIndQC == i, :);
+			else
+				tempTraj = intTraj(intClustIndQC == i, :);
+			end
+			nTraj = sum(intClustIndQC == i);
+			
+			% 
+			meanIntTrend = mean(tempTraj, 1);
+			intTrajQCdet = tempTraj - repmat(meanIntTrend, [nTraj 1]);
+			meanInt = mean(intTrajQCdet, 2);
+			intNoiseQC = intTrajQCdet - repmat(meanInt, [1 trjDuration]);
+			
+			% Calculate mean population intensity
+			intMeanQC = mean(mean(tempTraj));
+			
+			% Calculate zero crossing
+			temp = intNoiseQC(1:end-1) .* wshift('1D', intNoiseQC(1:end-1), 1);
+			intZCrossQC = sum(temp <= 0) / trjDuration / meanFrameDuration * 3600;
+			
+			% Calculate the ACF for intensity noise with QC
+			totalAcf = zeros(1, trjDuration);
+			intAcfTrajQC = zeros(nTraj, trjDuration);
+			for k = 1:nTraj
+				[acf, lag] = xcorr(intNoiseQC(k, :), 'biased');
+				acf(lag < 0) = [];
+				totalAcf = totalAcf + acf;
+				intAcfTrajQC(k, :) = acf;
+			end
+			totalAcf = totalAcf / nTraj;
+			
+			% Variance (sigma2) is the zero-lag value of ACF
+			intSigma2QC = totalAcf(1);
+			
+			% Cross correlation distance. Use squareform() to convert into
+			% square matrix
+			intNoiseXCorrQC = pdist(intNoiseQC, @xcorrDist);
+			
+			% Interpolate ACF linearly and find half maximum value
+			try
+				intTauHalfQC = interp1(totalAcf, 1:trjDuration, 0.5 * max(totalAcf));
+				intTauHalfQC = intTauHalfQC * meanFrameDuration / 3600;
+				intCV2QC = intSigma2QC / intMeanQC ^ 2;
+			catch
+				intTauHalfQC = -1;
+				intCV2QC = -1;
+			end
+			
+			% Create structure to hold information for current well
+			% Check if this well has been processed for noise. If not,
+			% create a new field for the well.
+			if (~isfield(intNoiseInfo, wellName))
+				intNoiseInfo.(wellName) = struct();
+			end
+			
+			% Create struct array for noise data
+			if (isfield(intNoiseInfo.(wellName), 'polyClust'))
+				if (isstruct(intNoiseInfo.(wellName).polyClust))
+					if (length(intNoiseInfo.(wellName).polyClust) ~= nCluster)
+						intNoiseInfo.(wellName).polyClust = repmat(struct(), [1, nCluster]);
+					end
+				else
+					intNoiseInfo.(wellName).polyClust = repmat(struct(), [1, nCluster]);
+				end
+			else
+				intNoiseInfo.(wellName).polyClust = repmat(struct(), [1, nCluster]);
+			end
+			
+			if (useQC)
+				intNoiseInfo.(wellName).polyClust(i).intMeanQC = intMeanQC;
+				intNoiseInfo.(wellName).polyClust(i).intSigma2QC = intSigma2QC;
+				intNoiseInfo.(wellName).polyClust(i).intTauHalfQC = intTauHalfQC;
+				intNoiseInfo.(wellName).polyClust(i).intCV2QC = intCV2QC;
+				intNoiseInfo.(wellName).polyClust(i).intAcfTrajQC = intAcfTrajQC;
+				intNoiseInfo.(wellName).polyClust(i).intNoiseTrajQC = intNoiseQC;
+				intNoiseInfo.(wellName).polyClust(i).intZCrossQC = intZCrossQC;
+				intNoiseInfo.(wellName).polyClust(i).intNoiseXCorrQC = intNoiseXCorrQC;
+			else
+				intNoiseInfo.(wellName).polyClust(i).intMean = intMeanQC;
+				intNoiseInfo.(wellName).polyClust(i).intSigma2 = intSigma2QC;
+				intNoiseInfo.(wellName).polyClust(i).intTauHalf = intTauHalfQC;
+				intNoiseInfo.(wellName).polyClust(i).intCV2 = intCV2QC;
+				intNoiseInfo.(wellName).polyClust(i).intAcfTraj = intAcfTrajQC;
+				intNoiseInfo.(wellName).polyClust(i).intNoiseTraj = intNoiseQC;
+				intNoiseInfo.(wellName).polyClust(i).intZCross = intZCrossQC;
+				intNoiseInfo.(wellName).polyClust(i).intNoiseXCorr = intNoiseXCorrQC;
+			end
+		end
+		% Save noise informatino to .mat file
+		polyClust = intNoiseInfo.(wellName).polyClust;
+		if (useQC)
+			save(filename, 'polyClust', 'intClustIndQC', '-append');
+		else
+			intClustInd = intClustIndQC;
+			save(filename, 'polyClust', 'intClustInd', '-append');
+		end
+		fprintf('Done!\n');
+	else
+		% Calculate noise using QC data
+		if (useQC)
+			meanIntTrend = mean(intTrajQC, 1);
+			intTrajQCdet = intTrajQC - repmat(meanIntTrend, [cellNumQC 1]);
+		else
+			meanIntTrend = mean(intTraj, 1);
+			intTrajQCdet = intTraj - repmat(meanIntTrend, [cellNum 1]);
+		end
+		meanInt = mean(intTrajQCdet, 2);
+		intNoiseQC = intTrajQCdet - repmat(meanInt, [1 trjDuration]);
+		
+		% Calculate mean population intensity
+		intMeanQC = mean(meanIntTrend);
+		
+		% Calculate zero crossing
+		temp = intNoiseQC(1:end-1) .* wshift('1D', intNoiseQC(1:end-1), 1);
+		intZCrossQC = sum(temp <= 0) / trjDuration / meanFrameDuration * 3600;
+		
+		% Calculate the ACF for intensity noise with QC
+		totalAcf = zeros(1, trjDuration);
+		if (useQC)
+			intAcfTrajQC = zeros(cellNumQC, trjDuration);
+			for k = 1:cellNumQC
+				[acf, lag] = xcorr(intNoiseQC(k, :), 'biased');
+				acf(lag < 0) = [];
+				totalAcf = totalAcf + acf;
+				intAcfTrajQC(k, :) = acf;
+			end
+			totalAcf = totalAcf / cellNumQC;
+		else
+			intAcfTrajQC = zeros(cellNum, trjDuration);
+			for k = 1:cellNum
+				[acf, lag] = xcorr(intNoiseQC(k, :), 'biased');
+				acf(lag < 0) = [];
+				totalAcf = totalAcf + acf;
+				intAcfTrajQC(k, :) = acf;
+			end
+			totalAcf = totalAcf / cellNum;
+		end
+		
+		% Variance (sigma2) is the zero-lag value of ACF
+		intSigma2QC = totalAcf(1);
+		
+		% Cross correlation distance. Use squareform() to convert into
+		% square matrix
+		intNoiseXCorrQC = pdist(intNoiseQC, @xcorrDist);
+		
+		% Interpolate ACF linearly and find half maximum value
+		try
+			intTauHalfQC = interp1(totalAcf, 1:trjDuration, 0.5 * max(totalAcf));
+			intTauHalfQC = intTauHalfQC * meanFrameDuration / 3600;
+			intCV2QC = intSigma2QC / intMeanQC ^ 2;
+		catch
+			intTauHalfQC = -1;
+			intCV2QC = -1;
+		end
+		
+		% Check if this well has been processed for noise. If not,
+		% create a new field for the well.
+		if (~isfield(intNoiseInfo, wellName))
+			intNoiseInfo.(wellName) = struct();
+		end
+		
+		% Create structure to hold information for current well
+		if (useQC)
+			intNoiseInfo.(wellName).intMeanQC = intMeanQC;
+			intNoiseInfo.(wellName).intSigma2QC = intSigma2QC;
+			intNoiseInfo.(wellName).intTauHalfQC = intTauHalfQC;
+			intNoiseInfo.(wellName).intCV2QC = intCV2QC;
+			intNoiseInfo.(wellName).intZCrossQC = intZCrossQC;
+			intNoiseInfo.(wellName).nCellQC = cellNumQC;
+			intNoiseInfo.(wellName).genTrendQC = meanIntTrend;
+			intNoiseInfo.(wellName).intNoiseXCorrQC = intNoiseXCorrQC;
+		else
+			intNoiseInfo.(wellName).intMean = intMeanQC;
+			intNoiseInfo.(wellName).intSigma2 = intSigma2QC;
+			intNoiseInfo.(wellName).intTauHalf = intTauHalfQC;
+			intNoiseInfo.(wellName).intCV2 = intCV2QC;
+			intNoiseInfo.(wellName).intZCross = intZCrossQC;
+			intNoiseInfo.(wellName).nCell = cellNum;
+			intNoiseInfo.(wellName).genTrend = meanIntTrend;
+			intNoiseInfo.(wellName).intNoiseXCorr = intNoiseXCorrQC;
+		end
+		
+		% Save the data to .mat file
+		if (useQC)
+			intNoiseTrajQC = intNoiseQC;
+			save(filename, 'intMeanQC', 'intSigma2QC', 'intTauHalfQC', ...
+			'intCV2QC', 'intAcfTrajQC', 'intNoiseTrajQC', 'intNoiseXCorrQC', ...
+			'-append');
+		else
+			intMean = intMeanQC;
+			intSigma2 = intSigma2QC;
+			intTauHalf = intTauHalfQC;
+			intCV2 = intCV2QC;
+			intAcfTraj = intAcfTrajQC;
+			intNoiseTraj = intNoiseQC;
+			intNoiseXCorr = intNoiseXCorrQC;
+			save(filename, 'intMean', 'intSigma2', 'intTauHalf', ...
+			'intCV2', 'intAcfTraj', 'intNoiseTraj', 'intNoiseXCorr', '-append');
+		end
+		fprintf('Done!\n');
+	end
+	save('expInfo.mat', 'intNoiseInfo', '-append');
+end
+```					    
   </details>
 
 ### 3) Quality Control
@@ -614,7 +867,7 @@ end
 ****
 * Repeated after auto-correlation in Quality Control step
 * Same process as Step 2
-* Final data?
+* QC data is considered the "final data." Thus, this process is the main step in the noise analysis.
 
 
 ### 5) Add Tags to WellName.mat files
@@ -743,7 +996,7 @@ save('expInfo.mat', 'tagList', 'uniqTag', 'nTag', 'tagCount', '-append');
 
 ### 6) Exclude Wells
 ****
-* User___________
+* User can decide to remove any wells from analysis. This applies to empty wells, data with significant systematic shift, or specific wells that the user can manually input. 
 
 <details>
   <summary>1. Check to see if .mat files have been read (Step 1).</summary>
@@ -768,7 +1021,7 @@ useExcel = false;
   </details>
 
 <details>
-  <summary>2.</summary>
+  <summary>2. Ask user if they would like to use information from an Excel sheet to remove sepcific wells. </summary>
   
 ```python
 while (1)
@@ -801,7 +1054,7 @@ end
   </details>
 
 <details>
-  <summary>3.</summary>
+  <summary>3. User can remove wells with data that varies significantly from expected values. </summary>
   
 ```python
 while (1)
@@ -849,7 +1102,7 @@ end
   </details>
 
 <details>
-  <summary>4.</summary>
+  <summary>4. User can remove wells that contain no data.</summary>
   
 ```python
 while (1)
@@ -870,7 +1123,7 @@ end
   </details>
 
 <details>
-  <summary>5.</summary>
+  <summary>5. If user opts not to use an Excel sheet to remove wells, they can manually input tags to remove asscociated wells. </summary>
   
 ```python
 rmv = false(1, nWellProc);
@@ -909,7 +1162,7 @@ end
   </details>
 
 <details>
-  <summary>6.</summary>
+  <summary>6. Removal of wells with significant systematic shift, if user opted in. </summary>
   
 ```python
 % Remove wells with significant systematic shift
@@ -954,7 +1207,7 @@ nWellProc = nWellProc - sum(rmv);
   </details>
 
 <details>
-  <summary>7.</summary>
+  <summary>7. After removal of wells, update list of wells' tags.</summary>
   
 ```python
 if (exist('tagList', 'var') == 1)
