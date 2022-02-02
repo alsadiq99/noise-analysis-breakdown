@@ -1,16 +1,15 @@
 # Noise Analysis Breakdown
 
-Breaking down the code used to perform the noise analysis on...... 
+In this documentation, a step-by-step description of the code used in the noise anlaysis of the HIV Gene Expression assay cited below. 
 
 ***
 ### 1) Read .mat files from xlsx2mat.m and Plot Trajectories for Each Well
 ***
 
-* Read .mat files & plot trajectories for each well's raw data. 
-* Optionally, plot equivalent diameter and save plots as .png files.
+*Read .mat files & plot trajectories for each well's raw data. Optionally, plot equivalent diameter and save plots as .png files.*
 
 <details>
-  <summary>1. First we check to see if file has already been read and plotted.</summary>
+	<summary><b>1.First we check to see if file has already been read and plotted.</b></summary>
 
 ```python
 if (exist('expInfo.mat', 'file') ~= 2)
@@ -29,7 +28,7 @@ load('expInfo.mat');
   </details>
   
 <details>
-  <summary>2. Ask user if equivalent diameter should be plotted.</summary>
+	<summary><b>2. Ask user if equivalent diameter should be plotted.</b></summary>
 
 ```python
 while (1)
@@ -50,7 +49,7 @@ end
   </details>
   
 <details>
-  <summary>3. Ask user to save plot as .png</summary>
+	<summary><b>3. Ask user to save plot as .png</b></summary>
 
 ```python
 while (1)
@@ -71,7 +70,7 @@ end
   </details>
   
 <details>
-  <summary>4. Ask user to include general trends.</summary>
+	<summary><b>4. Ask user to include general trends.</b></summary>
   
 ```python
 while (1)
@@ -92,7 +91,7 @@ end
   </details>
 
 <details>
-  <summary>5. User can re-plot data after running Quality Control (Step 4) function.</summary>
+	<summary><b>5. User can re-plot data after running Quality Control (Step 4) function.</b></summary>
   
 ```python
 if (QCdone)
@@ -117,7 +116,7 @@ end
   </details>
 
 <details>
-  <summary>6. Plot Data!</summary>
+	<summary><b>6. Plot Data!</b></summary>
   
 ```python
 for i = 1:nWellProc
@@ -291,7 +290,7 @@ fprintf('Completed plotting of %d .mat file!\n', nWellProc);
 * Requires Step 1 
 
 <details>
-  <summary>1. Ensure .mat file has been read and plotted</summary>
+	<summary><b>1. Ensure .mat file has been read and plotted.</b></summary>
   
 ```python
 % Check if xlsx2mat.m has been run before
@@ -643,8 +642,104 @@ load('expInfo.mat');
   </details>
 
 <details>
-  <summary>2. Tag each well</summary>
+  <summary>2. User can tag wells using an Excel sheet containing information on how to tag the wells. If not, user can manually add tagging data later on.</summary>
+	
+```python
+useExcel = false;
+if (exist('tag.xlsx', 'file') == 2)
+	while (1)
+		useExcel = input('Use tag.xlsx content for tags? (Y/N): ', 's');
+		% Detect if the length of the answer is 1, and if the answer is Y(y) or
+		% N(n). If it is not, keep asking
+		if (length(useExcel) == 1)
+			if (useExcel(1) == 'y' || useExcel(1) == 'Y')
+				useExcel = true(1);
+				fprintf('Processing...');
+				[~, ~, tagData] = xlsread('tag.xlsx');
+				break;
+			elseif (useExcel(1) == 'n' || useExcel(1) == 'N')
+				useExcel = false(1);
+				break;
+			end
+		end
+	end
+end
+```
   </details>
+
+<details>
+	<summary>3. Create a list with tags. If Excel data not used, prompt user to manually add tags for each file.</summary>
+	
+```python
+tagList = cell(1, nWellProc);
+for i = 1:nWellProc
+	% Write filename
+	filename = sprintf('Well%s%s.mat', char(rowList(i)), char(colList(i)));
+	
+	% Write well name
+	wellName = sprintf('Well%s%s', char(rowList(i)), char(colList(i)));
+	
+	% Load data
+	load(filename);
+	
+	if (useExcel)
+		% Read tag and store
+		row = char(rowList(i)) - 'A' + 1;
+		col = str2double(char(colList(i)));
+		try
+			tag = char(tagData(row, col));
+		catch
+			tag = cell2mat(tagData(row, col));
+			if isnan(tag)
+				tag = '';
+			else
+				tag = num2str(tag);
+			end
+		end
+	else
+		% Ask for tag and store
+		tag = input(sprintf('Tag for well %s: ', wellName), 's');
+	end
+	save(filename, 'tag', '-append');
+	tagList(i) = cellstr(tag);
+end
+```
+</details>
+	
+<details>
+	<summary>4. Iterate over tag list and count number of unique tags.</summary>
+	
+```python
+% Detect how many unique tags exist
+nTag = 1;
+uniqTag = tagList(1);
+for i = 2:nWellProc
+	ifNewTag = 1;
+	for j = 1:nTag
+		if (strcmp(tagList(i), uniqTag(j)))
+			ifNewTag = 0;
+			break;
+		end
+	end
+	if (ifNewTag)
+		nTag = nTag + 1;
+		uniqTag(nTag) = tagList(i);
+	end
+end
+
+tagCount = zeros(1, nTag);
+for i = 1:nTag
+	tagCount(i) = sum(strcmp(tagList, uniqTag(i)));
+end
+
+if (useExcel)
+	fprintf(' Done!\n');
+end
+
+% Save tag list into expInfo.mat
+save('expInfo.mat', 'tagList', 'uniqTag', 'nTag', 'tagCount', '-append');
+```
+</details>
 
 ### 6) Exclude Wells
 ****
@@ -926,7 +1021,7 @@ load('expInfo.mat');
   </details>
 
 <details>
-  <summary>2.</summary>
+  <summary>2. Iterate over all wells and see if well has been saved. Save previously excluded wells and prompt user to re-run tag wells code to tag newly saved wells.</summary>
   
 ```python
 nWellProc = 0;
