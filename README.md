@@ -314,7 +314,7 @@ load('expInfo.mat');
   </details>
   
 <details>
-  <summary>2. Check to see if noise analysis has already been performed. If so, we want to add to the previous file. This is useful when we re-run the noise analysis over the auto-correlated data.</summary>
+  <summary><b>2. Check to see if noise analysis has already been performed. If so, we want to add to the previous file. This is useful when we re-run the noise analysis over the auto-correlated data.</b></summary>
   
 ```python
 % See if noise has been processed. If not, create an empty structure. If
@@ -332,7 +332,7 @@ end
   </details>
 
 <details>
-  <summary>3. Check to see if auto-correlation (Quality Control) has been perfromed over data. Asks user's input on whether or not to use QC data. Since we have not yet performed Quality Control over the data, we will proceed with the NonQC process for now.</summary>
+  <summary><b>3. Check to see if auto-correlation (Quality Control) has been perfromed over data. Asks user's input on whether or not to use QC data. Since we have not yet performed Quality Control over the data, we will proceed with the NonQC process for now.</b></summary>
   
 ```python
 % Detects if QC was done, and asks user whether to use QC data or not
@@ -358,7 +358,7 @@ end
   </details>
 
 <details>
-  <summary>4. Set QC condition based on previous step.</summary>
+  <summary><b>4. Set QC condition based on previous step.</b></summary>
   
 ```python
 if (useQC)
@@ -370,7 +370,7 @@ end
   </details>
 
 <details>
-  <summary>5. Perform noise analysis! </summary>
+  <summary><b>5. Perform noise analysis!</b></summary>
 	
 ```python
 j = 1;
@@ -629,7 +629,7 @@ end
 * Requires Step 1 & 3
 
 <details>
-  <summary>1. Check to see if .mat file has been read and raw data trajectories have been plotted (Step 1).</summary>
+  <summary><b>1. Check to see if .mat file has been read and raw data trajectories have been plotted (Step 1).</b></summary>
   
 ```python
 % Check if xlsx2mat.m has been run before
@@ -650,7 +650,7 @@ load('expInfo.mat');
   </details>
   
 <details>
-  <summary>2. Label data as having been auto-correlated.</summary>
+  <summary><b>2. Label data as having been auto-correlated.</b></summary>
   
 ```python
 % Flag for completion of at least one round of QC
@@ -659,7 +659,7 @@ QCdone = true(1);
   </details>
 
 <details>
-  <summary>3. Ask user if they would like to remove saturated trajectories.</summary>
+  <summary><b>3. Ask user if they would like to remove saturated trajectories.</b></summary>
   
 ```python
 % Ask the user whether to remove trajectories with long saturations
@@ -692,7 +692,7 @@ end
   </details>
 
 <details>
-  <summary>4. Ask user if they would like to remove fast-changing trajectories.</summary>
+  <summary><b>4. Ask user if they would like to remove fast-changing trajectories.</b></summary>
   
 ```python
 % Ask user whether to remove fast changing trajectories
@@ -725,7 +725,7 @@ end
   </details>
 
 <details>
-  <summary>5. Ask user if they would like to remove trajectories with siginificant white noise.</summary>
+  <summary><b>5. Ask user if they would like to remove trajectories with siginificant white noise.</b></summary>
   
 ```python
 % Ask user whether to remove trajectories with large white noise according
@@ -761,7 +761,7 @@ end
   </details>
 
 <details>
-  <summary>6. Auto-correlate data</summary>
+  <summary><b>6. Auto-correlate data!</b></summary>
   
 ```python
 lowThresh = -1;
@@ -875,7 +875,7 @@ end
 * Label wells as positive/negative control and data points
 
 <details>
-  <summary>1. Check to see if .mat files have been read (Step 1).</summary>
+  <summary><b>1. Check to see if .mat files have been read (Step 1).</b></summary>
   
 ```python
 % Check if xlsx2mat.m has been run before
@@ -895,7 +895,7 @@ load('expInfo.mat');
   </details>
 
 <details>
-  <summary>2. User can tag wells using an Excel sheet containing information on how to tag the wells. If not, user can manually add tagging data later on.</summary>
+  <summary><b>2. User can tag wells using an Excel sheet containing information on how to tag the wells. If not, user can manually add tagging data later on.</b></summary>
 	
 ```python
 useExcel = false;
@@ -921,7 +921,7 @@ end
   </details>
 
 <details>
-	<summary>3. Create a list with tags. If Excel data not used, prompt user to manually add tags for each file.</summary>
+	<summary><b>3. Create a list with tags. If Excel data not used, prompt user to manually add tags for each file.</b></summary>
 	
 ```python
 tagList = cell(1, nWellProc);
@@ -960,7 +960,7 @@ end
 </details>
 	
 <details>
-	<summary>4. Iterate over tag list and count number of unique tags.</summary>
+	<summary><b>4. Iterate over tag list and count number of unique tags.</b></summary>
 	
 ```python
 % Detect how many unique tags exist
@@ -999,7 +999,7 @@ save('expInfo.mat', 'tagList', 'uniqTag', 'nTag', 'tagCount', '-append');
 * User can decide to remove any wells from analysis. This applies to empty wells, data with significant systematic shift, or specific wells that the user can manually input. 
 
 <details>
-  <summary>1. Check to see if .mat files have been read (Step 1).</summary>
+  <summary><b>1. Check to see if .mat files have been read (Step 1).</b></summary>
   
 ```python
 % Check if xlsx2mat.m has been run before
@@ -1021,7 +1021,7 @@ useExcel = false;
   </details>
 
 <details>
-  <summary>2. Ask user if they would like to use information from an Excel sheet to remove sepcific wells. </summary>
+  <summary><b>2. Ask user if they would like to use information from an Excel sheet to remove sepcific wells.</b></summary>
   
 ```python
 while (1)
@@ -1054,7 +1054,7 @@ end
   </details>
 
 <details>
-  <summary>3. User can remove wells with data that varies significantly from expected values. </summary>
+  <summary><b>3. User can remove wells with data that varies significantly from expected values.</b></summary>
   
 ```python
 while (1)
@@ -1102,7 +1102,7 @@ end
   </details>
 
 <details>
-  <summary>4. User can remove wells that contain no data.</summary>
+  <summary><b>4. User can remove wells that contain no data.</b></summary>
   
 ```python
 while (1)
@@ -1123,7 +1123,7 @@ end
   </details>
 
 <details>
-  <summary>5. If user opts not to use an Excel sheet to remove wells, they can manually input tags to remove asscociated wells. </summary>
+  <summary><b>5. If user opts not to use an Excel sheet to remove wells, they can manually input tags to remove asscociated wells.</b></summary>
   
 ```python
 rmv = false(1, nWellProc);
@@ -1162,7 +1162,7 @@ end
   </details>
 
 <details>
-  <summary>6. Removal of wells with significant systematic shift, if user opted in. </summary>
+  <summary><b>6. Removal of wells with significant systematic shift, if user opted in.</b></summary>
   
 ```python
 % Remove wells with significant systematic shift
@@ -1207,7 +1207,7 @@ nWellProc = nWellProc - sum(rmv);
   </details>
 
 <details>
-  <summary>7. After removal of wells, update list of wells' tags.</summary>
+  <summary><b>7. After removal of wells, update list of wells' tags.</b></summary>
   
 ```python
 if (exist('tagList', 'var') == 1)
@@ -1254,7 +1254,7 @@ end
 * User can decide to rescan if any wells were excluded
 
 <details>
-  <summary>1. Check to see if .mat files have been read (Step 1).</summary>
+  <summary><b>1. Check to see if .mat files have been read (Step 1).</b></summary>
   
 ```python
 % Check if xlsx2mat.m has been run before
@@ -1274,7 +1274,7 @@ load('expInfo.mat');
   </details>
 
 <details>
-  <summary>2. Iterate over all wells and see if well has been saved. Save previously excluded wells and prompt user to re-run tag wells code to tag newly saved wells.</summary>
+  <summary><b>2. Iterate over all wells and see if well has been saved. Save previously excluded wells and prompt user to re-run tag wells code to tag newly saved wells.</b></summary>
   
 ```python
 nWellProc = 0;
