@@ -1,6 +1,6 @@
 # Noise Analysis Breakdown
 
-In this documentation, a step-by-step description of the code used in the noise anlaysis of the HIV Gene Expression assay.
+This documentation contains a step-by-step description of the code used in the noise anlaysis of the HIV Gene Expression assay.
 
 Lu, Y., Bohn-Wippert, K., Pazerunas, P. J., Moy, J. M., Singh, H., & Dar, R. D. (2021). Screening for gene expression fluctuations reveals latency-promoting agents of HIV. Proceedings of the National Academy of Sciences of the United States of America, 118(11), e2012191118. https://doi.org/10.1073/pnas.2012191118
 
@@ -290,7 +290,6 @@ fprintf('Completed plotting of %d .mat file!\n', nWellProc);
 ### 2) Noise Analysis for Raw Intensity Trajectory Data
 ***
 * The noise analysis was first run over the raw data (before auto-correlation in Quality Control). 
-* Can only be used over isoclonal data
 * Requires Step 1 
 
 <details>
@@ -332,7 +331,7 @@ end
   </details>
 
 <details>
-  <summary><b>3. Check to see if auto-correlation (Quality Control) has been perfromed over data. Asks user's input on whether or not to use QC data. Since we have not yet performed Quality Control over the data, we will proceed with the NonQC process for now.</b></summary>
+  <summary><b>3. Check to see if Quality Control has been perfromed over data. Asks user's input on whether or not to use QC data. Since we have not yet performed Quality Control over the data, we will proceed with the NonQC process for now.</b></summary>
   
 ```python
 % Detects if QC was done, and asks user whether to use QC data or not
@@ -624,9 +623,10 @@ end
 
 ### 3) Quality Control
 *****
-* Includes an auto-correlation fucntion
-* Removes saturated and fast-changing trajectories
+* Uses raw data and calculated autocorrelation as criteria for quality control
+* Removes saturated trajectories, fast-changing trajectories and/or trajectories with significant white noise
 * Requires Step 1 & 3
+* Only trajectories with significant white noise were removed in Lu et al. PNAS 2021 using autocorrelation function as the criteria. Trajectories with more than 20% decrease in their autocorrelation functions from the first frame to the second were excluded.
 
 <details>
   <summary><b>1. Check to see if .mat file has been read and raw data trajectories have been plotted (Step 1).</b></summary>
@@ -761,7 +761,7 @@ end
   </details>
 
 <details>
-  <summary><b>6. Auto-correlate data!</b></summary>
+  <summary><b>6. Perfrom QC on the data!</b></summary>
   
 ```python
 lowThresh = -1;
@@ -865,7 +865,8 @@ end
   
 ### 4) Repeat Noise Analysis for QC Intensity Trajectory Data
 ****
-* Repeated after auto-correlation in Quality Control step
+* Repeated after performing Quality Control step
+* Make sure to use QC data during this round of noise analysis
 * Same process as Step 2
 * QC data is considered the "final data." Thus, this process is the main step in the noise analysis.
 
@@ -1054,55 +1055,7 @@ end
   </details>
 
 <details>
-  <summary><b>3. User can remove wells with data that varies significantly from expected values.</b></summary>
-  
-```python
-while (1)
-	ifRmSysShift = input('Remove wells with significant systematic shift? (Y/N): ', 's');
-	% Detect if the length of the answer is 1, and if the answer is Y(y) or
-	% N(n). If it is not, keep asking
-	if (length(ifRmSysShift) == 1)
-		if (ifRmSysShift(1) == 'y' || ifRmSysShift(1) == 'Y')
-			ifRmSysShift = true(1);
-			while (1)
-				nRmSysShift = input('How many frames of systematic shift is allowed: ');
-				if (isnumeric(nRmSysShift))
-					% If number of well is smaller than 1 or not integer, repeat question.
-					if ((nRmSysShift >= 1) && (floor(nRmSysShift) == nRmSysShift))
-						break;
-					end
-				end
-			end
-			if (QCdone)
-				while (1)
-					ifQC = input('Do you want to use QC data? (Y/N): ', 's');
-					% Detect if the length of the answer is 1, and if the answer is Y(y) or
-					% N(n). If it is not, keep asking
-					if (length(ifQC) == 1)
-						if (ifQC(1) == 'y' || ifQC(1) == 'Y')
-							ifQC = true(1);
-							break;
-						elseif (ifQC(1) == 'n' || ifQC(1) == 'N')
-							ifQC = false(1);
-							break;
-						end
-					end
-				end
-			else
-				ifQC = false(1);
-			end
-			break;
-		elseif (ifRmSysShift(1) == 'n' || ifRmSysShift(1) == 'N')
-			ifRmSysShift = false(1);
-			break;
-		end
-	end
-end
-```
-  </details>
-
-<details>
-  <summary><b>4. User can remove wells that contain no data.</b></summary>
+  <summary><b>3. User can remove wells that contain no data.</b></summary>
   
 ```python
 while (1)
@@ -1123,7 +1076,7 @@ end
   </details>
 
 <details>
-  <summary><b>5. If user opts not to use an Excel sheet to remove wells, they can manually input tags to remove asscociated wells.</b></summary>
+  <summary><b>4. If user opts not to use an Excel sheet to remove wells, they can manually input tags to remove asscociated wells.</b></summary>
   
 ```python
 rmv = false(1, nWellProc);
@@ -1162,52 +1115,7 @@ end
   </details>
 
 <details>
-  <summary><b>6. Removal of wells with significant systematic shift, if user opted in.</b></summary>
-  
-```python
-% Remove wells with significant systematic shift
-for i = 1:nWellProc
-	row = char(rowList(i)) - 'A' + 1;
-	col = str2double(char(colList(i)));
-	fileName = sprintf('Well%s%s.mat', char(rowList(i)), char(colList(i)));
-	load(fileName);
-	if (cellNum == 0)
-		if (ifRmEmpty)
-			rmv(i) = true;
-		end
-		continue;
-	end
-	if (ifRmSysShift)
-		if (ifQC)
-			dIntTraj = intTrajQC - wshift('2d', intTrajQC, [0 -1]);
-			for k = 2:trjDuration
-				sigmaDInt(k) = std(dIntTraj(:, k));
-				muDInt(k) = mean(dIntTraj(:, k));
-			end
-			if (sum(sigmaDInt./abs(muDInt)<=1) > nRmSysShift)
-				rmv(i) = true;
-			end
-		else
-			dIntTraj = intTraj - wshift('2d', intTraj, [0 -1]);
-			for k = 2:trjDuration
-				sigmaDInt(k) = std(dIntTraj(:, k));
-				muDInt(k) = mean(dIntTraj(:, k));
-			end
-			if (sum(sigmaDInt./abs(muDInt)<=1) > nRmSysShift)
-				rmv(i) = true;
-			end
-		end
-	end
-end
-
-rowList(rmv) = [];
-colList(rmv) = [];
-nWellProc = nWellProc - sum(rmv);
-```
-  </details>
-
-<details>
-  <summary><b>7. After removal of wells, update list of wells' tags.</b></summary>
+  <summary><b>5. After removal of wells, update list of wells' tags.</b></summary>
   
 ```python
 if (exist('tagList', 'var') == 1)
@@ -1251,7 +1159,7 @@ end
 
 ### 7) Rescan .mat files
 *****
-* User can decide to rescan if any wells were excluded
+* User can decide to rescan and revert Step 6 if any wells were excluded by mistake
 
 <details>
   <summary><b>1. Check to see if .mat files have been read (Step 1).</b></summary>
@@ -1274,7 +1182,7 @@ load('expInfo.mat');
   </details>
 
 <details>
-  <summary><b>2. Iterate over all wells and see if well has been saved. Save previously excluded wells and prompt user to re-run tag wells code to tag newly saved wells.</b></summary>
+  <summary><b>2. Iterate over all wells and revert exclusion.</b></summary>
   
 ```python
 nWellProc = 0;
