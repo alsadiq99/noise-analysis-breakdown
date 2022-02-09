@@ -625,7 +625,7 @@ end
 *****
 * Uses raw data and calculated autocorrelation as criteria for quality control
 * Removes saturated trajectories, fast-changing trajectories and/or trajectories with significant white noise
-* Requires Step 1 & 3
+* Requires Step 1 & 2
 * Only trajectories with significant white noise were removed in Lu et al. PNAS 2021 using autocorrelation function as the criteria. Trajectories with more than 20% decrease in their autocorrelation functions from the first frame to the second were excluded.
 
 <details>
@@ -997,7 +997,7 @@ save('expInfo.mat', 'tagList', 'uniqTag', 'nTag', 'tagCount', '-append');
 
 ### 6) Exclude Wells
 ****
-* User can decide to remove any wells from analysis. This applies to empty wells, data with significant systematic shift, or specific wells that the user can manually input. 
+* User can decide to remove any wells from analysis. This applies to empty wells or specific wells that the user can manually input. 
 
 <details>
   <summary><b>1. Check to see if .mat files have been read (Step 1).</b></summary>
@@ -1159,7 +1159,7 @@ end
 
 ### 7) Rescan .mat files
 *****
-* User can decide to rescan and revert Step 6 if any wells were excluded by mistake
+* User can decide to rescan and revert Step 6 if any well was excluded by mistake
 
 <details>
   <summary><b>1. Check to see if .mat files have been read (Step 1).</b></summary>
