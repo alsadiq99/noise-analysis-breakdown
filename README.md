@@ -1,6 +1,6 @@
 # Noise Analysis Breakdown
 
-This documentation contains a step-by-step description of the code used in the noise anlaysis of the HIV Gene Expression assay.
+This documentation contains a step-by-step description of the noise analysis of a HIV gene expression assay of Jurkat T cells. A time-lapse fluorescence microscopy was perfromed over a Jurkat cell line infected with an HIV feedback vector. The vector contained a green fluorescent protein (d2GFP) and an HIV trancription activator. Muitple drugs, outlined by the NCI, and their affects on HIV latency were examined. After running the assay, the noise analysis was performed over the image data from the microscopy. 
 
 Lu, Y., Bohn-Wippert, K., Pazerunas, P. J., Moy, J. M., Singh, H., & Dar, R. D. (2021). Screening for gene expression fluctuations reveals latency-promoting agents of HIV. Proceedings of the National Academy of Sciences of the United States of America, 118(11), e2012191118. https://doi.org/10.1073/pnas.2012191118
 
