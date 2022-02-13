@@ -1,9 +1,10 @@
 # Noise Analysis Breakdown
 
-This documentation contains a step-by-step description of the noise analysis of a HIV gene expression assay of Jurkat T cells. A time-lapse fluorescence microscopy was perfromed over a Jurkat cell line infected with an HIV feedback vector. The vector contained a green fluorescent protein (d2GFP) and an HIV trancription activator. Muitple drugs, outlined by the NCI, and their affects on HIV latency were examined. After running the assay, the noise analysis was performed over the image data from the microscopy. 
+This documentation outlines a step-by-step description of the noise analysis performed in Lu et al., PNAS (2021) [1]. Single cell time-lapse fluorescence microscopy was performed over 48h of imaging on a clonal T-cell population harboring an active HIV LTR promoter driving a green fluorescent protein (d2GFP) and the HIV trans-activator of transcription (Tat) (i.e. a minimal HIV positive feedback circuit). Images from over 1800 compound treatments from the National Cancer Institute (NCI) were acquired and quantified for single cell intensity trajectories after single cell tracking. All data are available through a UIUC repository [2]. The following noise analysis was performed on each well treatment from the drug screen, and can be applied to time-lapse gene expression intensity data of interest.
 
-Lu, Y., Bohn-Wippert, K., Pazerunas, P. J., Moy, J. M., Singh, H., & Dar, R. D. (2021). Screening for gene expression fluctuations reveals latency-promoting agents of HIV. Proceedings of the National Academy of Sciences of the United States of America, 118(11), e2012191118. https://doi.org/10.1073/pnas.2012191118
+[1] Lu, Y., Bohn-Wippert, K., Pazerunas, P. J., Moy, J. M., Singh, H., & Dar, R. D. (2021). Screening for gene expression fluctuations reveals latency-promoting agents of HIV. Proceedings of the National Academy of Sciences of the United States of America, 118(11), e2012191118. https://doi.org/10.1073/pnas.2012191118
 
+[2] Lu, Yiyang; Bohn-Wippert, Kathrin; Pazerunas, Patrick J.; Moy, Jennifer M.; Singh, Harpal; Dar, Roy D. (2022): Time-lapse Fluorescence Microscopy Images and Gene Expression Data of Single T-Cells Infected with a Minimal HIV Feedback Circuit under 1,806 Drug Treatments. University of Illinois at Urbana-Champaign. https://doi.org/10.13012/B2IDB-8103861_V1 
 
 
 ***
